@@ -61,6 +61,12 @@ Push this repo to GitHub, then in the Cloudflare dashboard:
 - Build command: `npm run build`
 - Build output directory: `dist`
 
+**Don't add `pages_build_output_dir` to `wrangler.toml`.** It looks like the modern
+way to declare this, but as of writing it puts Cloudflare's Pages build into a
+"Wrangler configuration (BETA)" mode that silently ignores the dashboard's Build
+command field entirely — the build gets skipped and `dist` is never created. The
+dashboard fields above are the only supported way to set the build command today.
+
 ### 5. Bind the D1 database in the Pages project
 
 In the Pages project's **Settings → Functions → D1 database bindings**, add a binding
