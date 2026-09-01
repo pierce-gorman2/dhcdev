@@ -1,7 +1,14 @@
 import { requireAdmin, jsonResponse } from '../../_lib/auth.js';
 import { nowIso } from '../../_lib/db.js';
 
-const EDITABLE_FIELDS = ['name', 'address', 'target_open_date', 'status', 'notes'];
+const EDITABLE_FIELDS = [
+  'name',
+  'address',
+  'construction_start_date',
+  'target_open_date',
+  'status',
+  'notes',
+];
 
 export const onRequestPatch = requireAdmin(async ({ request, env, params }) => {
   const body = await request.json().catch(() => ({}));

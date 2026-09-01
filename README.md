@@ -112,7 +112,8 @@ across `wrangler d1 execute` and `wrangler pages dev`.
 
 ## Data model
 
-- `stores` — one row per location (name, address, target open date, status, notes).
+- `stores` — one row per location (name, address, construction start date, target open
+  date, status, notes).
 - `vendors` — master vendor list, shared across every store.
 - `store_vendors` — join table: which vendors are on which store's board, their status,
   notes, and *optional overrides* for contact name/phone/email (falls back to the
@@ -120,6 +121,18 @@ across `wrangler d1 execute` and `wrangler pages dev`.
   Deleting a row here only removes that vendor from that one store's board.
 - `update_log` — one-line timestamped notes per store, optionally tied to a specific
   vendor.
+- `milestones` — freeform dated tasks per store (title, date, completed), shown on that
+  store's Calendar tab alongside its construction start and target open dates.
+
+New tables/columns added after the initial launch (like `milestones`) get a numbered
+migration file (`migrations/002_...sql`, etc.) instead of being folded into
+`schema.sql` silently — `schema.sql` is only for what a brand-new install needs, and it
+does get updated to include everything so a fresh clone is self-contained. Apply a new
+numbered migration to the live database with:
+
+```bash
+npx wrangler d1 execute dhc_tracker_db --remote --file=./migrations/00N_whatever.sql
+```
 
 ## Project structure
 

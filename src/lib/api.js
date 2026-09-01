@@ -49,4 +49,10 @@ export const api = {
     list: (storeId) => request(`/update-log?store_id=${storeId}`),
     create: (data) => request('/update-log', { method: 'POST', body: JSON.stringify(data) }),
   },
+  milestones: {
+    list: (storeId) => request(`/milestones?store_id=${storeId}`),
+    create: (data) => request('/milestones', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/milestones/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    remove: (id) => request(`/milestones/${id}`, { method: 'DELETE' }),
+  },
 };

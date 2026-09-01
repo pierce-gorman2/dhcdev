@@ -9,6 +9,7 @@ import AddVendorModal from '../components/AddVendorModal.jsx'
 import VendorDetailModal from '../components/VendorDetailModal.jsx'
 import UpdateLogFeed from '../components/UpdateLogFeed.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import StoreCalendar from '../components/StoreCalendar.jsx'
 
 export default function StoreBoard() {
   const { storeId } = useParams()
@@ -18,6 +19,7 @@ export default function StoreBoard() {
   const [storeVendors, setStoreVendors] = useState([])
   const [allVendors, setAllVendors] = useState([])
   const [logs, setLogs] = useState([])
+  const [milestones, setMilestones] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -27,6 +29,7 @@ export default function StoreBoard() {
   const [editingStore, setEditingStore] = useState(false)
   const [storeForm, setStoreForm] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [view, setView] = useState('board')
 
   useEffect(() => {
     load()
@@ -39,13 +42,15 @@ export default function StoreBoard() {
       api.storeVendors.list(storeId),
       api.vendors.list(),
       api.updateLog.list(storeId),
+      api.milestones.list(storeId),
     ])
-      .then(([stores, sv, vendors, log]) => {
+      .then(([stores, sv, vendors, log, milestoneRows]) => {
         const found = stores.find((s) => s.id === storeId)
         setStore(found || null)
         setStoreVendors(sv)
         setAllVendors(vendors)
         setLogs(log)
+        setMilestones(milestoneRows)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -89,6 +94,7 @@ export default function StoreBoard() {
 
   function startEditStore() {
     setStoreForm({
+      construction_start_date: store.construction_start_date || '',
       target_open_date: store.target_open_date || '',
       status: store.status,
       notes: store.notes || '',
@@ -100,6 +106,26 @@ export default function StoreBoard() {
     const updated = await api.stores.update(storeId, storeForm)
     setStore(updated)
     setEditingStore(false)
+  }
+
+  async function addMilestone(title, date) {
+    const row = await api.milestones.create({ store_id: storeId, title, date })
+    setMilestones((prev) => [...prev, row])
+  }
+
+  async function toggleMilestone(milestone) {
+    const updated = await api.milestones.update(milestone.id, { completed: !milestone.completed })
+    setMilestones((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+  }
+
+  async function deleteMilestone(milestone) {
+    setMilestones((prev) => prev.filter((m) => m.id !== milestone.id))
+    try {
+      await api.milestones.remove(milestone.id)
+    } catch (err) {
+      setError(err.message)
+      load()
+    }
   }
 
   if (loading) return <p className="text-sm text-ink-500">Loading board…</p>
@@ -124,7 +150,10 @@ export default function StoreBoard() {
               <span className={`h-1.5 w-1.5 rounded-full ${storeStatus.dot}`} />
               {storeStatus.label}
             </span>
-            <span className="text-ink-600">{formatDate(store.target_open_date)}</span>
+            {store.construction_start_date && (
+              <span className="text-ink-600">Start {formatDate(store.construction_start_date)}</span>
+            )}
+            <span className="text-ink-600">Open {formatDate(store.target_open_date)}</span>
             <span className="font-medium text-ink-700">{countdownLabel(days)}</span>
           </div>
         </div>
@@ -151,6 +180,15 @@ export default function StoreBoard() {
 
       {editingStore && (
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-ink-200 bg-white p-4 sm:grid-cols-3">
+          <div>
+            <label className="text-xs font-medium uppercase tracking-wide text-ink-500">Construction start</label>
+            <input
+              type="date"
+              value={storeForm.construction_start_date}
+              onChange={(e) => setStoreForm((f) => ({ ...f, construction_start_date: e.target.value }))}
+              className="mt-1 w-full rounded-md border border-ink-200 px-3 py-2 text-sm"
+            />
+          </div>
           <div>
             <label className="text-xs font-medium uppercase tracking-wide text-ink-500">Target open date</label>
             <input
@@ -194,25 +232,57 @@ export default function StoreBoard() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-          {STATUS_ORDER.map((status) => (
-            <StatusColumn
-              key={status}
-              status={status}
-              items={byStatus[status] || []}
-              isAdmin={isAdmin}
-              onOpen={setActiveSv}
-              onDelete={setDeleteTarget}
-              dragOver={dragOverStatus === status}
-              setDragOver={setDragOverStatus}
-              onDrop={(dropStatus, vendorId) => moveVendor(vendorId, dropStatus)}
-            />
-          ))}
-        </div>
-
-        <UpdateLogFeed logs={logs} isAdmin={isAdmin} onAddLog={addLog} />
+      <div className="mt-6 flex gap-1 border-b border-ink-200">
+        <button
+          onClick={() => setView('board')}
+          className={`border-b-2 px-3 py-2 text-sm font-medium ${
+            view === 'board' ? 'border-ink-900 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-800'
+          }`}
+        >
+          Board
+        </button>
+        <button
+          onClick={() => setView('calendar')}
+          className={`border-b-2 px-3 py-2 text-sm font-medium ${
+            view === 'calendar' ? 'border-ink-900 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-800'
+          }`}
+        >
+          Calendar
+        </button>
       </div>
+
+      {view === 'board' ? (
+        <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+            {STATUS_ORDER.map((status) => (
+              <StatusColumn
+                key={status}
+                status={status}
+                items={byStatus[status] || []}
+                isAdmin={isAdmin}
+                onOpen={setActiveSv}
+                onDelete={setDeleteTarget}
+                dragOver={dragOverStatus === status}
+                setDragOver={setDragOverStatus}
+                onDrop={(dropStatus, vendorId) => moveVendor(vendorId, dropStatus)}
+              />
+            ))}
+          </div>
+
+          <UpdateLogFeed logs={logs} isAdmin={isAdmin} onAddLog={addLog} />
+        </div>
+      ) : (
+        <div className="mt-4">
+          <StoreCalendar
+            store={store}
+            milestones={milestones}
+            isAdmin={isAdmin}
+            onAdd={addMilestone}
+            onToggle={toggleMilestone}
+            onDelete={deleteMilestone}
+          />
+        </div>
+      )}
 
       <AddVendorModal
         open={addOpen}

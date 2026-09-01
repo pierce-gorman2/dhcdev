@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS stores (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   address TEXT,
+  construction_start_date TEXT,
   target_open_date TEXT,
   status TEXT NOT NULL DEFAULT 'pre-buildout'
     CHECK (status IN ('pre-buildout', 'in-progress', 'final-prep', 'open')),
@@ -46,7 +47,17 @@ CREATE TABLE IF NOT EXISTS update_log (
   created_by TEXT NOT NULL DEFAULT 'admin'
 );
 
+CREATE TABLE IF NOT EXISTS milestones (
+  id TEXT PRIMARY KEY,
+  store_id TEXT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  date TEXT NOT NULL,
+  completed INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_store_vendors_store ON store_vendors(store_id);
 CREATE INDEX IF NOT EXISTS idx_store_vendors_vendor ON store_vendors(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_update_log_store ON update_log(store_id);
 CREATE INDEX IF NOT EXISTS idx_update_log_store_vendor ON update_log(store_vendor_id);
+CREATE INDEX IF NOT EXISTS idx_milestones_store ON milestones(store_id);
