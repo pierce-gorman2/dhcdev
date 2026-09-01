@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "pages:dev": "npm run build && wrangler pages dev dist --d1=DB=REPLACE-WITH-D1-DATABASE-ID --compatibility-date=2024-09-01",
+    "pages:dev": "npm run build && wrangler pages dev dist --d1=DB=c5d0cfbe-23a2-4519-bfb0-db8716f65b4a --compatibility-date=2024-09-01",
     "db:migrate:local": "wrangler d1 execute dhc_tracker_db --local --file=./migrations/schema.sql",
     "db:seed:local": "wrangler d1 execute dhc_tracker_db --local --file=./migrations/seed.sql",
     "db:migrate:remote": "wrangler d1 execute dhc_tracker_db --remote --file=./migrations/schema.sql",

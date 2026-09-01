@@ -4,4 +4,4 @@ compatibility_date = "2024-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "dhc_tracker_db"
-database_id = "REPLACE-WITH-D1-DATABASE-ID"
+database_id = "c5d0cfbe-23a2-4519-bfb0-db8716f65b4a"
